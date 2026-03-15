@@ -1,0 +1,9 @@
+Artificial intelligence is the simulation of human intelligence processes by computer systems. These processes include learning, reasoning, and self-correction. AI has become one of the most transformative technologies of the 21st century.
+
+Machine learning is a subset of AI that enables computers to learn from data without being explicitly programmed. Deep learning uses neural networks with many layers to recognize patterns in large amounts of data. Natural language processing allows computers to understand and generate human language.
+
+Large language models like GPT and Claude are trained on vast amounts of text data and can generate coherent and contextually relevant text. These models power chatbots, writing assistants, and code generation tools. Vector databases store high-dimensional embeddings that represent the semantic meaning of text, enabling fast similarity search.
+
+Retrieval Augmented Generation or RAG is a technique that combines information retrieval with language model generation. Instead of relying solely on knowledge learned during training, a RAG system retrieves relevant documents from a knowledge base and uses them as context when generating answers. This makes responses more accurate and grounded in specific information.
+
+AI is being applied across many industries including healthcare for drug discovery, finance for fraud detection, transportation for autonomous vehicles, and education for personalized learning.

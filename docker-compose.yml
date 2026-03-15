@@ -1,0 +1,29 @@
+services:
+
+  endee:
+    image: endeeio/endee-server:latest
+    container_name: endee-server
+    ports:
+      - "8080:8080"
+    environment:
+      NDD_NUM_THREADS: 0
+      NDD_AUTH_TOKEN: ""
+    volumes:
+      - endee-data:/data
+    restart: unless-stopped
+
+  app:
+    build: .
+    container_name: docmind
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - endee
+    restart: unless-stopped
+    environment:
+      - TRANSFORMERS_CACHE=/app/.cache
+
+volumes:
+  endee-data:
