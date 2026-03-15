@@ -1,7 +1,7 @@
 # app/main.py
 
 from fastapi import FastAPI, HTTPException
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, FileResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from contextlib import asynccontextmanager
@@ -11,7 +11,8 @@ from app.chunker import chunk_text
 from app.embedder import embed
 from app.endee_client import create_index, upsert_vectors
 from app.rag_pipeline import run_rag
-
+from app.pdf_parser import extract_text_from_pdf
+from fastapi import FastAPI, HTTPException, UploadFile, File
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -25,10 +26,12 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="Document Q&A using RAG and Endee",
-    description="Upload documents and ask questions. Powered by Endee vector database and Gemini.",
     version="1.0.0",
     lifespan=lifespan
 )
+
+frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend")
+app.mount("/static", StaticFiles(directory=frontend_path), name="static")
 
 
 class UploadRequest(BaseModel):
@@ -42,9 +45,19 @@ class QuestionRequest(BaseModel):
 
 @app.get("/", response_class=HTMLResponse)
 def serve_frontend():
-    frontend_path = os.path.join(os.path.dirname(__file__), "..", "frontend", "index.html")
-    with open(frontend_path, "r") as f:
+    index_file = os.path.join(frontend_path, "index.html")
+    with open(index_file, "r") as f:
         return f.read()
+
+
+@app.get("/style.css")
+def serve_css():
+    return FileResponse(os.path.join(frontend_path, "style.css"), media_type="text/css")
+
+
+@app.get("/app.js")
+def serve_js():
+    return FileResponse(os.path.join(frontend_path, "app.js"), media_type="application/javascript")
 
 
 @app.post("/upload")
@@ -58,16 +71,16 @@ def upload_document(request: UploadRequest):
     for chunk in chunks:
         vector = embed(chunk["text"])
         chunks_with_vectors.append({
-            "id": chunk["id"],
+            "id":     chunk["id"],
             "vector": vector,
-            "text": chunk["text"],
+            "text":   chunk["text"],
             "source": chunk["source"]
         })
 
     upsert_vectors(chunks_with_vectors)
 
     return {
-        "message": f"Document uploaded and indexed successfully.",
+        "message": "Document uploaded and indexed successfully.",
         "chunks_created": len(chunks)
     }
 
@@ -79,3 +92,34 @@ def ask_question(request: QuestionRequest):
 
     result = run_rag(request.question)
     return result
+
+@app.post("/upload-pdf")
+async def upload_pdf(file: UploadFile = File(...)):
+    if not file.filename.endswith(".pdf"):
+        raise HTTPException(status_code=400, detail="Only PDF files are accepted.")
+
+    contents = await file.read()
+    text = extract_text_from_pdf(contents)
+
+    if not text.strip():
+        raise HTTPException(status_code=400, detail="Could not extract text from this PDF.")
+
+    source_name = file.filename.replace(".pdf", "")
+    chunks = chunk_text(text, source_name=source_name)
+
+    chunks_with_vectors = []
+    for chunk in chunks:
+        vector = embed(chunk["text"])
+        chunks_with_vectors.append({
+            "id":     chunk["id"],
+            "vector": vector,
+            "text":   chunk["text"],
+            "source": chunk["source"]
+        })
+
+    upsert_vectors(chunks_with_vectors)
+
+    return {
+        "message": "PDF uploaded and indexed successfully.",
+        "chunks_created": len(chunks)
+    }

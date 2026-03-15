@@ -154,17 +154,50 @@ function renderSources(sources) {
     section.style.display = "block";
 }
 
-function handleFileUpload(event) {
+async function handleFileUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
+
+    document.getElementById("fileNameDisplay").textContent = file.name;
+    document.getElementById("docName").value = file.name.replace(/\.[^/.]+$/, "");
+
+    if (file.name.endsWith(".pdf")) {
+        const btn  = document.getElementById("uploadBtn");
+        btn.disabled = true;
+        setStatus("uploadStatus", "Extracting text from PDF and indexing...", "loading", true);
+
+        try {
+            const formData = new FormData();
+            formData.append("file", file);
+
+            const response = await fetch("/upload-pdf", {
+                method: "POST",
+                body: formData
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                setStatus("uploadStatus", data.chunks_created + " chunks stored in Endee.", "success");
+                indexedDocs.push({ name: file.filename, chunks: data.chunks_created });
+                renderIndexedList();
+                showToast("PDF indexed successfully.");
+            } else {
+                setStatus("uploadStatus", data.detail || "PDF upload failed.", "error");
+            }
+        } catch {
+            setStatus("uploadStatus", "Could not connect to the server.", "error");
+        }
+
+        btn.disabled = false;
+        return;
+    }
 
     const reader = new FileReader();
     reader.onload = function(e) {
         document.getElementById("docText").value = e.target.result;
-        document.getElementById("docName").value = file.name.replace(/\.[^/.]+$/, "");
         const count = e.target.result.length;
         document.getElementById("charCount").textContent = count.toLocaleString() + " characters";
     };
     reader.readAsText(file);
-    document.getElementById("fileNameDisplay").textContent = file.name;
 }
