@@ -1,5 +1,3 @@
-# app/pdf_parser.py
-
 import PyPDF2
 import io
 

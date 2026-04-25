@@ -1,5 +1,3 @@
-# app/embedder.py
-
 import requests
 import os
 import hashlib
@@ -10,8 +8,6 @@ load_dotenv()
 
 
 def embed(text):
-    # Use a simple but effective TF-IDF style embedding
-    # that does not require any heavy ML libraries
     words = text.lower().split()
     vector = np.zeros(384)
     for i, word in enumerate(words):

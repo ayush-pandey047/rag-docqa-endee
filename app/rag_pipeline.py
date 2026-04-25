@@ -1,8 +1,14 @@
-# app/rag_pipeline.py
-
 from app.embedder import embed
 from app.endee_client import search
 from app.gemini_client import generate_answer
+import os
+
+
+# USE_LOCAL = os.environ.get("USE_LOCAL_VDB", "1") in ("1", "true", "True")
+# if USE_LOCAL:
+#     from app.local_vectorstore import search, upsert, health_check
+# else:
+#     from app.endee_client import search, upsert, health_check
 
 
 def run_rag(question):
